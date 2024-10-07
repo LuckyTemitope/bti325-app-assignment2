@@ -1,0 +1,4 @@
+.navbar {
+    background: cyan;
+    text-decoration: underline;
+}
