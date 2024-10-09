@@ -3,10 +3,11 @@ const path = require("path");
 const fs = require("fs");
 const blogService = require("./blog-service.js");
 const app = express();
+app.use(express.static(__dirname + '/public'));
 
 const HTTP_PORT = process.env.PORT || 8080;
 
-app.use(express.static("public"));
+// app.use(express.static("public"));
 
 app.get("/", (req, res) => {
   res.redirect("/about");
