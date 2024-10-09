@@ -8,8 +8,9 @@
   },
   "author": "Lucky Osunbiyi",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "express": "^4.21.0"
-  }
+  },
+  "devDependencies": {},
+  "description": ""
 }
