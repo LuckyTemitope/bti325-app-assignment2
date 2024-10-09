@@ -10,7 +10,7 @@ let categories = []
 function initialize() {
     return new Promise((resolve, reject) => {
         // Read posts.json
-        fs.readFile('./data/posts.json', 'utf8', (err, data) => {
+        fs.readFile(__dirname + '/data/posts.json', 'utf8', (err, data) => {
             if (err) {
                 return reject("unable to read file: posts.json");
             }
@@ -21,7 +21,7 @@ function initialize() {
             }
 
             // Read categories.json once posts.json is read successfully
-            fs.readFile('./data/categories.json', 'utf8', (err, data) => {
+            fs.readFile(__dirname + '/data/categories.json', 'utf8', (err, data) => {
                 if (err) {
                     return reject("unable to read file: categories.json");
                 }
