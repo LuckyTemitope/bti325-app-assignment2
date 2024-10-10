@@ -49,6 +49,7 @@ app.get("/categories", (req, res) => {
 
 app.use((req, res, next) => {
   res.status(404).sendfile(path.join(__dirname, "/views/error.html"));
+
 });
 
 blogService
@@ -63,3 +64,5 @@ blogService
     // Log error and prevent server from starting
     console.error(`Failed to initialize data: ${err}`);
   });
+
+  
