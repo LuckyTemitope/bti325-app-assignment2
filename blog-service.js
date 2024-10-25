@@ -90,6 +90,24 @@ function getAllPosts() {
   });
 }
 
+function addPost(postData) {
+  return new Promise((resolve, reject) => {
+    if (postData.published == undefined){
+      postData.published = false; // Set default value for published if not provided
+    } else { 
+      postData.published = true;
+    }
+
+    postData.id = posts.length + 1;
+
+    posts.push(postData); // Add new post to posts array
+
+    resolve(postData);
+
+  });
+
+}
+
 // getPublishedPosts function
 function getPublishedPosts() {
   return new Promise((resolve, reject) => {
@@ -113,4 +131,6 @@ function getCategories() {
   });
 }
 
-module.exports = { initialize, getAllPosts, getPublishedPosts, getCategories };
+
+
+module.exports = { initialize, getAllPosts, getPublishedPosts, getCategories, addPost };

@@ -1,68 +1,124 @@
+/*********************************************************************************
+ *  BTI325 – Assignment 02
+ *  I declare that this assignment is my own work in accordance with Seneca Academic Policy. No part 
+ *  of this assignment has been copied manually or electronically from any other source 
+ *  (including 3rd party web sites) or distributed to other students.
+ *
+ *  Name: Lucky Osunbiyi Student ID: 144837192 Date: Oct. 24, 2024
+ *
+ *  Online (Vercel) Link: bti325-app-assignment2.vercel.app
+ ********************************************************************************/
+
 const express = require("express");
 const path = require("path");
-const fs = require("fs");
 const blogService = require("./blog-service.js");
-const app = express();
-app.use(express.static(__dirname + '/public'));
-
+const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
+const streamifier = require("streamifier");
 const HTTP_PORT = process.env.PORT || 8080;
 
-// app.use(express.static("public"));
+const app = express();
+const upload = multer();
 
+// Middleware
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
+
+// Cloudinary Configuration
+cloudinary.config({
+  cloud_name: "dmjqjuppv",
+  api_key: "279536762174178",
+  api_secret: "YsG08Sbf6b2ZkrN8t4KV4NUwtd0",
+  secure: true,
+});
+
+// Routes
 app.get("/", (req, res) => {
   res.redirect("/about");
 });
 
 app.get("/about", (req, res) => {
-  res.sendFile(path.join(__dirname, "/views/about.html"));
+  res.sendFile(path.join(__dirname, "views", "about.html"));
 });
 
-app.get("/blog", (req, res) => {
-  blogService.getPublishedPosts().then((publishedBlogs) => {
+app.get("/blog", async (req, res) => {
+  try {
+    const publishedBlogs = await blogService.getPublishedPosts();
     res.json(publishedBlogs);
-  }).catch((err) => { 
+  } catch (err) {
     console.error(err);
     res.status(500).send("An error occurred while fetching published posts");
-  });
+  }
 });
 
-app.get("/posts", (req, res) => {
-  blogService.getAllPosts().then((posts) => {
+app.get("/posts", async (req, res) => {
+  try {
+    const posts = await blogService.getAllPosts();
     res.json(posts);
-  }).catch((err) => {
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("An error occurred while fetching posts");
+  }
+});
+
+app.get("/posts/add", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "addPost.html"));
+});
+
+app.get("/categories", async (req, res) => {
+  try {
+    const categories = await blogService.getCategories();
+    res.json(categories);
+  } catch (err) {
     console.error(err);
     res.status(500).send("An error occurred while fetching categories");
   }
-  );
 });
 
-app.get("/categories", (req, res) => {
-  blogService.getCategories().then((categories) => {
-    res.json(categories);
-  }).catch((err) => {
-    console.error(err);
-    res.status(500).send("An error occurred while fetching categories");
-  })
+// Upload function using Cloudinary
+const streamUpload = (req) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream((error, result) => {
+      if (error) {
+        return reject(error);
+      }
+      resolve({ url: result.secure_url });
+    });
+
+    streamifier.createReadStream(req.file.buffer).pipe(stream);
+  });
+};
+
+// Handle new post with image upload
+app.post("/posts/add", upload.single("featureImage"), async (req, res) => {
+  try {
+    // Upload image to Cloudinary and set featureImage URL in the request body
+    const uploaded = await streamUpload(req);
+    req.body.featureImage = uploaded.url;
+
+    // Add the new post to the blog service
+    await blogService.addPost(req.body);
+    res.redirect("/posts");
+  } catch (error) {
+    console.error("Error during upload:", error);
+    res.status(500).send("Upload failed");
+  }
 });
 
-// Other route handlers, middleware, etc ...
-
-app.use((req, res, next) => {
-  res.status(404).sendfile(path.join(__dirname, "/views/error.html"));
-
+// Handle 404 errors
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, "views", "error.html"));
 });
 
+// Initialize the blog service and start the server
 blogService
   .initialize()
   .then(() => {
-    // Start the server only if initialization is successful
     app.listen(HTTP_PORT, () => {
       console.log(`Server is running on port ${HTTP_PORT}`);
     });
   })
   .catch((err) => {
-    // Log error and prevent server from starting
     console.error(`Failed to initialize data: ${err}`);
   });
-
-  
