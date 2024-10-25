@@ -54,7 +54,23 @@ app.get("/blog", async (req, res) => {
 
 app.get("/posts", async (req, res) => {
   try {
-    const posts = await blogService.getAllPosts();
+    let { category, minDate } = req.query; // Get query parameters
+
+    let posts;
+
+    if (category) {
+      // Filter posts by category
+      console.log("Filter posts by category");
+      posts = await blogService.getPostsByCategory(category);
+    } else if (minDate) {
+      // Filter posts by minimum date
+      console.log("Filter posts by min date");
+      posts = await blogService.getPostsByMinDate(minDate);
+    } else {
+      // Get all posts (existing functionality)
+      posts = await blogService.getAllPosts();
+    }
+
     res.json(posts);
   } catch (err) {
     console.error(err);
@@ -62,8 +78,26 @@ app.get("/posts", async (req, res) => {
   }
 });
 
+
 app.get("/posts/add", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "addPost.html"));
+});
+
+
+// Add the "/posts/:id" route to get a single post by ID
+app.get("/posts/:id", async (req, res) => {
+  try {
+    const postId = req.params.id; // Get the post ID from the route parameter
+    const post = await blogService.getPostById(postId);
+
+    if (post) {
+      res.json(post);
+    } else {
+      res.status(404).send("Post not found");
+    }
+  } catch (err) {
+    res.status(404).send("No result returned");
+  }
 });
 
 app.get("/categories", async (req, res) => {
