@@ -6,7 +6,7 @@
  *
  *  Name: Lucky Osunbiyi Student ID: 144837192 Date: Oct. 24, 2024
  *
- *  Online (Vercel) Link: bti325-app-assignment2.vercel.app
+ *  Online (Vercel) Link: https://bti325-app-assignment2.vercel.app/
  ********************************************************************************/
 
 const express = require("express");
