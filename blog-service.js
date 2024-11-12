@@ -68,14 +68,8 @@ function addPost(postData) {
     postData.id = posts.length + 1;
 
     // Set postDate to current date
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are zero-based, so add 1
-    const day = String(today.getDate()).padStart(2, '0');
-
-    const formattedDate = `${year}-${month}-${day}`;
-
-    postData.postDate = formattedDate;
+    const currentDate = new Date().toISOString().split('T')[0];
+    postData.postDate = currentDate;
 
     posts.push(postData); // Add new post to posts array
 
@@ -83,6 +77,7 @@ function addPost(postData) {
   });
 
 }
+
 
 // getPublishedPosts function
 function getPublishedPosts() {
@@ -122,7 +117,7 @@ function getPostsByMinDate(minDateStr) {
   });
 }
 
-
+// Get posts by id 
 function getPostById(id) {
   return new Promise((resolve, reject) => {
     const post = posts.find((post) => post.id === parseInt(id)); // Find post by ID
@@ -133,6 +128,21 @@ function getPostById(id) {
     }
   });
 }
+
+
+// Get published posts by category
+function getPublishedPostsByCategory(category) {
+  return new Promise((resolve, reject) => {
+  const filteredPosts = posts.filter((post) => post.published === true && post.category === parseInt(category)); // Filter posts by category
+    if (filteredPosts.length > 0) {
+      resolve(filteredPosts); // Return posts in the specified category
+    } else {
+      reject("no results returned"); // Reject if no posts are found in the specified category
+    }
+  });
+ 
+}
+
 
 // getCategories function
 function getCategories() {
@@ -147,4 +157,6 @@ function getCategories() {
 
 
 
-module.exports = { initialize, getAllPosts, getPublishedPosts, getPostsByCategory, getPostById, getPostsByMinDate, getCategories, addPost };
+
+
+module.exports = { initialize, getAllPosts, getPublishedPosts, getPostsByCategory, getPostById, getPostsByMinDate, getCategories, addPost, getPublishedPostsByCategory };
