@@ -133,11 +133,9 @@ app.get('/blog/:id', async (req, res) => {
     if (req.query.category) {
       // Obtain the published "posts" by category
       posts = await blogService.getPublishedPostsByCategory(req.query.category);
-      console.log(posts)
     } else {
       // Obtain the published "posts"
       posts = await blogService.getPublishedPosts();
-      console.log("posts = await blogService.getPublishedPosts();")
     }
 
     // Sort the published posts by postDate

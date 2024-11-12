@@ -3,7 +3,16 @@
         {{#if data.post}}
             <article>
                 <h2>{{data.post.title}}</h2>
-                <img src="{{data.post.featureImage}}" alt="Feature Image" class="img-fluid">
+
+
+                <div class="frame">
+                    <div class="mat">
+                        <div class="art">
+                            <img src="{{data.post.featureImage}}" alt="Feature Image" class="img-fluid">
+                        </div>
+                    </div>
+                </div>
+
                 <br /><br />
                 {{#safeHTML data.post.body}}{{/safeHTML}}
                 <br /><br />
