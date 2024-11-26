@@ -1,25 +1,30 @@
-
-
 .frame {
-    position: relative;
-    width: 100%;
-    /* height: 3vh; */
-    padding-bottom: 40%;
-    background: black;
-    box-shadow: 0 10px 7px -5px rgba(28, 28, 28, 0.3);
-  }
-  
-  .mat {
-    position: absolute;
-    background: white;
-    top: 3.0303%; bottom: 3.0303%; left: 2.5%; right: 2.5%;
-    box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.9) inset;
-  }
-  
+  position: relative;
+  width: 100%;
+  padding-bottom: 40%; /* Maintains aspect ratio */
+  background: black;
+  box-shadow: 0 10px 7px -5px rgba(28, 28, 28, 0.3);
+  height: 50vh;
+}
 
-  .art img {
-    width: 100%;
-    height: auto;
-    object-fit: contain;
-  }
-  
+.mat {
+  position: absolute;
+  background: white;
+  height: 93%;
+  top: 3%; bottom: 3%; left: 2.5%; right: 2.5%; /* Adjust padding around the .mat */
+  box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.3) inset;
+}
+
+.art {
+  display: flex; /* Enable Flexbox */
+  justify-content: center; /* Center horizontally */
+  align-items: center; /* Center vertically */
+  width: 100%; /* Make sure it takes up the full width */
+  height: 100%; /* Make sure it takes up the full height */
+}
+
+.art img {
+  object-fit: contain; /* Ensures the image is fully contained */
+  max-width: 100%; /* Ensures the image does not overflow horizontally */
+  max-height: 100%; /* Ensures the image does not overflow vertically */
+}

@@ -24,6 +24,7 @@ const stripJs = require('strip-js');
 const app = express();
 const upload = multer();
 
+
 // Set up Handlebars with custom helpers
 app.engine('hbs', exphbs.engine({
   extname: '.hbs',
@@ -31,6 +32,12 @@ app.engine('hbs', exphbs.engine({
     ...helpers,
       safeHTML: function(context) {
           return stripJs(context);
+      },
+      formatDate: function (dateObj) {
+        let year = dateObj.getFullYear();
+        let month = (dateObj.getMonth() + 1).toString();
+        let day = dateObj.getDate().toString();
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
       }
   }
 }));
@@ -168,39 +175,82 @@ app.get('/blog/:id', async (req, res) => {
 
 
 app.get("/posts", async (req, res) => {
-  try {
-    let { category, minDate } = req.query; // Get query parameters
-    let posts;
+  blogService.getAllPosts()
+    .then((data) => {
+      if (data.length > 0) {
+        res.render("posts", { posts: data }); // Render posts if data is available
+      } else {
+        res.render("posts", { message: "no results" }); // Render a message if no posts
+      }
+    })
+    .catch((err) => {
+      res.render("posts", { message: "Error retrieving posts: " + err });
+    });
+});
 
-    if (category) {
-      // Filter posts by category
-      console.log("Filter posts by category");
-      posts = await blogService.getPostsByCategory(category);
-    } else if (minDate) {
-      // Filter posts by minimum date
-      console.log("Filter posts by min date");
-      posts = await blogService.getPostsByMinDate(minDate);
-    } else {
-      // Get all posts (existing functionality)
-      posts = await blogService.getAllPosts();
-    }
+app.get("/categories/add", (req, res) => {
+  res.render("addCategory"); // Render the addCategory view (make sure to create this view)
+});
 
-    // Render the posts view with the posts data, or a message if no posts are found
-    if (posts.length > 0) {
-      res.render("posts", { posts: posts });
-    } else {
-      res.render("posts", { message: "No results" });
-    }
-  } catch (err) {
-    console.error(err);
-    res.render("posts", { message: "An error occurred while fetching posts" });
+app.post("/categories/add", (req, res) => {
+  const categoryData = req.body;
+
+  // Ensure the category name is not empty or blank
+  if (!categoryData.category || categoryData.category.trim() === "") {
+    res.status(400).send("Category name cannot be empty.");
+    return;
   }
+
+  // Call the addCategory service method to add the new category
+  blogService.addCategory(categoryData)
+    .then(() => {
+      res.redirect("/categories"); // Redirect to categories view after success
+    })
+    .catch((err) => {
+      res.status(500).send("Unable to add category: " + err); // Error handling
+    });
+});
+
+app.get("/categories/delete/:id", (req, res) => {
+  const categoryId = req.params.id;
+
+  // Call the deleteCategoryById function
+  blogService.deleteCategoryById(categoryId)
+    .then(() => {
+      res.redirect("/categories"); // Redirect to categories view after deletion
+    })
+    .catch((err) => {
+      res.status(500).send("Unable to remove category / Category not found: " + err);
+    });
+});
+
+
+app.get("/posts/delete/:id", (req, res) => {
+  const postId = req.params.id;
+
+  blogService.deletePostById(postId)
+      .then(() => {
+          // If the post was deleted successfully, redirect to /posts
+          res.redirect("/posts");
+      })
+      .catch((err) => {
+          // If there was an error, return a 500 status with an error message
+          res.status(500).send("Unable to Remove Post / Post not found");
+      });
 });
 
 
 
 app.get("/posts/add", (req, res) => {
-  res.render('addPost');
+  blogService.getCategories()
+  .then((categories) => {
+      res.render("addPost", {
+          categories: categories // Pass categories to the view
+      });
+  })
+  .catch((err) => {
+            // If there's an error fetching categories, pass an empty array
+            res.render("addPost", { categories: [] });  });
 });
 
 
@@ -221,13 +271,17 @@ app.get("/posts/:id", async (req, res) => {
 });
 
 app.get("/categories", async (req, res) => {
-  try {
-    const categories = await blogService.getCategories(); // Assuming blogService has a method to fetch categories
-    res.render("categories", { categories });
-  } catch (err) {
-    console.error(err);
-    res.render("categories", { message: "no results" });
-  }
+  blogService.getCategories()
+  .then((data) => {
+    if (data.length > 0) { 
+      res.render("categories", { categories: data }); // Render categories if data is available
+    } else {
+      res.render("categories", { message: "no results" }); // Render a message if no categories
+    }
+  })
+  .catch((err) => {
+    res.render("categories", { message: "Error retrieving categories: " + err });
+  });
 });
 
 
@@ -260,6 +314,17 @@ app.post("/posts/add", upload.single("featureImage"), async (req, res) => {
     res.status(500).send("Upload failed");
   }
 });
+
+app.post("/categories/add", (req, res) => {
+  addCategory(req.body)
+    .then(() => {
+      res.redirect("/categories"); // Redirect to the categories list on success
+    })
+    .catch((err) => {
+      res.status(500).send("Unable to add category: " + err); // Send error message on failure
+    });
+});
+
 
 // Handle 404 errors
 app.use((req, res) => {
