@@ -122,7 +122,7 @@ app.get('/blog', async (req, res) => {
       viewData.categoriesMessage = "no results"
   }
 
-  // render the "blog" view with all of the data (viewData)
+  // render the "blog" view with all of the data
   res.render("blog", {data: viewData})
 
 });
