@@ -3,6 +3,7 @@ const Sequelize = require('sequelize');
 var sequelize = new Sequelize("SenecaDB", "SenecaDB_owner", "1my3PnGsNJBc", {
     host: "ep-lucky-block-a5rreioq.us-east-2.aws.neon.tech",
     dialect: 'postgres',
+    dialectModule: require('pg'),
     port: 5432,
     dialectOptions: {
         ssl: { rejectUnauthorized: false }
