@@ -28,3 +28,12 @@
   max-width: 100%; /* Ensures the image does not overflow horizontally */
   max-height: 100%; /* Ensures the image does not overflow vertically */
 }
+
+a {
+  color: white;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: none;
+}

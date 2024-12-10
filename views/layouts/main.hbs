@@ -24,7 +24,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <span class="navbar-brand" href="#">WEB322 - Lucky Osunbiyi</span>
+          <span class="navbar-brand"> <a href="/">WEB322 - Lucky Osunbiyi</a> </span>
         </div>
     
         <!-- Collect the nav links, forms, and other content for toggling -->
@@ -35,10 +35,33 @@
             
         </ul>
 
-        <ul class="nav navbar-nav navbar-right">
-            {{#navlink "/posts"}}Posts{{/navlink}}
-            {{#navlink "/categories"}}Categories{{/navlink}}
-          </ul>
+        {{#if session.user}}
+                <form class="navbar-form navbar-right">
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="userMenu" data-toggle="dropdown">
+                            <span class="glyphicon glyphicon-user"></span>&nbsp;&nbsp;{{session.user.userName}}&nbsp;&nbsp;<span
+                                class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="userMenu">
+                            <li><a href="/userHistory">User History</a></li>
+                            <li><a href="/logout">Log Out</a></li>
+                        </ul>
+                    </div>
+                </form>
+                <ul class="nav navbar-nav navbar-right">
+                    {{#navlink "/posts"}}Posts{{/navlink}}
+                    {{#navlink "/categories"}}Categories{{/navlink}}
+                </ul>
+                {{else}}
+                <form class="navbar-form navbar-right">
+                    <a href="/register" class="btn btn-success">
+                        <span class="glyphicon glyphicon-cog"></span>&nbsp;&nbsp;Register
+                    </a>
+                    <a href="/login" class="btn btn-primary">
+                        <span class="glyphicon glyphicon-chevron-right"></span>&nbsp;&nbsp;Log In
+                    </a>
+                </form>
+                {{/if}}
 
           
         </div><!-- /.navbar-collapse -->

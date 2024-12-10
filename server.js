@@ -19,6 +19,10 @@ const streamifier = require("streamifier");
 const HTTP_PORT = process.env.PORT || 8080;
 const exphbs = require("express-handlebars");
 const stripJs = require('strip-js');
+const authData = require("./auth-service.js");
+const clientSessions = require("client-sessions");
+
+
 
 
 const app = express();
@@ -50,6 +54,17 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+app.use(clientSessions({
+  cookieName: "session", // the cookie key name
+  secret: "a_long_random_secret_string", // a long random string for encryption
+  duration: 24 * 60 * 60 * 1000, // session duration in milliseconds (1 day)
+  activeDuration: 1000 * 60 * 30 // extend session by 30 minutes if active
+}));
+app.use(function (req, res, next) {
+  res.locals.session = req.session;
+  next();
+});
+
 
 
 // Middleware to track the active route
@@ -61,6 +76,70 @@ app.use((req, res, next) => {
 });
 
 
+// Define a helper function to check if the user is logged in. If not, redirect them to the /login route:
+function ensureLogin(req, res, next) {
+  if (!req.session.user.userName) {
+      res.redirect("/login");
+  } else {
+      next();
+  }
+}
+
+
+// REGISTER, LOGIN, LOGOUT routes
+
+app.get('/login', (req, res) => {
+  res.render('login');
+});
+
+app.get('/register', (req, res) => {
+  res.render('register');
+});
+
+app.post('/register', (req, res) => {
+  authData.registerUser(req.body)
+      .then(() => {
+          res.render('register', { successMessage: "User created" });
+      })
+      .catch(err => {
+          res.render('register', {
+              errorMessage: err,
+              userName: req.body.userName
+          });
+      });
+});
+
+app.post('/login', (req, res) => {
+  req.body.userAgent = req.get('User-Agent'); // Set User-Agent
+
+  authData.checkUser(req.body)
+      .then(user => {
+          req.session.user = {
+              userName: user.userName,
+              email: user.email,
+              loginHistory: user.loginHistory
+          };
+          res.redirect('/posts'); // Redirect to posts view
+      })
+      .catch(err => {
+          res.render('login', {
+              errorMessage: err,
+              userName: req.body.userName
+          });
+      });
+});
+
+app.get('/logout', (req, res) => {
+  req.session.reset(); // Reset the session
+  res.redirect('/'); // Redirect to homepage
+});
+
+app.get('/userHistory', ensureLogin, (req, res) => {
+  res.render('userHistory');
+});
+
+
+
 // Cloudinary Configuration
 cloudinary.config({
   cloud_name: "dmjqjuppv",
@@ -68,6 +147,23 @@ cloudinary.config({
   api_secret: "YsG08Sbf6b2ZkrN8t4KV4NUwtd0",
   secure: true,
 });
+
+
+
+// Upload function using Cloudinary
+const streamUpload = (req) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream((error, result) => {
+      if (error) {
+        return reject(error);
+      }
+      resolve({ url: result.secure_url });
+    });
+
+    streamifier.createReadStream(req.file.buffer).pipe(stream);
+  });
+};
+
 
 // Routes
 app.get("/", (req, res) => {
@@ -174,7 +270,7 @@ app.get('/blog/:id', async (req, res) => {
 });
 
 
-app.get("/posts", async (req, res) => {
+app.get("/posts", ensureLogin,  async (req, res) => {
   blogService.getAllPosts()
     .then((data) => {
       if (data.length > 0) {
@@ -188,11 +284,11 @@ app.get("/posts", async (req, res) => {
     });
 });
 
-app.get("/categories/add", (req, res) => {
+app.get("/categories/add", ensureLogin, (req, res) => {
   res.render("addCategory"); // Render the addCategory view (make sure to create this view)
 });
 
-app.post("/categories/add", (req, res) => {
+app.post("/categories/add", ensureLogin, (req, res) => {
   const categoryData = req.body;
 
   // Ensure the category name is not empty or blank
@@ -211,7 +307,7 @@ app.post("/categories/add", (req, res) => {
     });
 });
 
-app.get("/categories/delete/:id", (req, res) => {
+app.get("/categories/delete/:id", ensureLogin, (req, res) => {
   const categoryId = req.params.id;
 
   // Call the deleteCategoryById function
@@ -225,7 +321,7 @@ app.get("/categories/delete/:id", (req, res) => {
 });
 
 
-app.get("/posts/delete/:id", (req, res) => {
+app.get("/posts/delete/:id", ensureLogin, (req, res) => {
   const postId = req.params.id;
 
   blogService.deletePostById(postId)
@@ -241,7 +337,7 @@ app.get("/posts/delete/:id", (req, res) => {
 
 
 
-app.get("/posts/add", (req, res) => {
+app.get("/posts/add", ensureLogin, (req, res) => {
   blogService.getCategories()
   .then((categories) => {
       res.render("addPost", {
@@ -255,7 +351,7 @@ app.get("/posts/add", (req, res) => {
 
 
 // Add the "/posts/:id" route to get a single post by ID
-app.get("/posts/:id", async (req, res) => {
+app.get("/posts/:id", ensureLogin, async (req, res) => {
   try {
     const postId = req.params.id; // Get the post ID from the route parameter
     const post = await blogService.getPostById(postId);
@@ -270,7 +366,7 @@ app.get("/posts/:id", async (req, res) => {
   }
 });
 
-app.get("/categories", async (req, res) => {
+app.get("/categories", ensureLogin, async (req, res) => {
   blogService.getCategories()
   .then((data) => {
     if (data.length > 0) { 
@@ -284,23 +380,8 @@ app.get("/categories", async (req, res) => {
   });
 });
 
-
-// Upload function using Cloudinary
-const streamUpload = (req) => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream((error, result) => {
-      if (error) {
-        return reject(error);
-      }
-      resolve({ url: result.secure_url });
-    });
-
-    streamifier.createReadStream(req.file.buffer).pipe(stream);
-  });
-};
-
 // Handle new post with image upload
-app.post("/posts/add", upload.single("featureImage"), async (req, res) => {
+app.post("/posts/add", ensureLogin, upload.single("featureImage"), async (req, res) => {
   try {
     // Upload image to Cloudinary and set featureImage URL in the request body
     const uploaded = await streamUpload(req);
@@ -315,7 +396,7 @@ app.post("/posts/add", upload.single("featureImage"), async (req, res) => {
   }
 });
 
-app.post("/categories/add", (req, res) => {
+app.post("/categories/add", ensureLogin, (req, res) => {
   addCategory(req.body)
     .then(() => {
       res.redirect("/categories"); // Redirect to the categories list on success
@@ -334,6 +415,7 @@ app.use((req, res) => {
 // Initialize the blog service and start the server
 blogService
   .initialize()
+  .then(authData.initialize)
   .then(() => {
     app.listen(HTTP_PORT, () => {
       console.log(`Server is running on port ${HTTP_PORT}`);
